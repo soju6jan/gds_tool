@@ -1,0 +1,7 @@
+title: "구글 드라이브 공유"
+version: "1.0.0"
+package_name: "gds_tool"
+developer: "소주6잔"
+description: "복사요청, 제공, GDS 변경사항"
+home: "https://github.com/soju6jan/gds_tool"
+more: "https://raw.githubusercontent.com/soju6jan/gds_tool/main/README.md"

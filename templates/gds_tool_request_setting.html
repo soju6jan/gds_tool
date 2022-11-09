@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+
+{{ macros.m_button_group([['globalSettingSaveBtn', '설정 저장']])}}
+{{ macros.m_row_start('5') }}
+{{ macros.m_row_end() }}
+{{ macros.m_hr() }}
+<form id='setting'>
+  {{ macros.setting_input_textarea_wide('request_remote_path', 'Copy Dest 리모트 정보', desc=['copy 리모트 정보', '형식 : 게시판이름,카테고리 = 리모트경로', '예) share_movie,국내 = my_remote:/video/movie/download', '게시판이름,카테고리가 정보가 있는 경우 설정된 곳으로 복사합니다.', '게시판이름만 있는 경우 카테고리에 상관없이 설정된 값에 복사합니다.', '정보가 없는 경우 default 에 복사합니다. default 값은 필수입니다.'], value=arg['request_remote_path'], row='20') }}
+</form>
+
+<script type="text/javascript">
+
+$(document).ready(function(){
+});
+
+$("body").on('change', '#_status', function(e) {
+  e.preventDefault();
+  var ret = $(this).prop('checked');
+  globalSendCommand('execute', ret);
+});
+
+</script>    
+{% endblock %}
+
