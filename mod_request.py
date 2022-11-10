@@ -4,7 +4,7 @@ from support.expand.rclone import SupportRclone
 from .setup import *
 
 SERVER_URL = "https://dev.sjva.me/server_gds/normal/gds/request"
-PUBLIC_CONF = os.path.join(os.path.dirname(__file__), 'files', 'public.conf')
+PUBLIC_CONF = os.path.join(os.path.dirname(__file__), 'files', 'public_copy.conf')
 PUBLIC_REMOTE = 'worker0401'
 
 
@@ -21,6 +21,8 @@ class ModuleRequest(PluginModuleBase):
             f'request_target_folderid': '',
         }
         self.web_list_model = ModelRequestItem
+        if os.path.exists(PUBLIC_CONF) == False:
+            shutil.copy(PUBLIC_CONF.replace('public_copy.conf', 'public.conf'), PUBLIC_CONF)
 
     def process_command(self, command, arg1, arg2, arg3, req):
         ret = {'ret':'success'}
