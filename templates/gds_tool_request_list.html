@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% block content %}
+ 
+<div>
+  <form id="form_search" class="form-inline" style="text-align:left">
+    <div class="container-fluid">
+      <div class="row show-grid">
+        <span class="col-md-6">
+          <select id="order" name="order" class="form-control form-control-sm">
+            <option value="desc">최근순</option>
+            <option value="asc">오래된순</option>
+          </select>
+          <select id="option1" name="option1" class="form-control form-control-sm">
+            <option value="all">구분 전체</option>
+            <option value="bot_ktv">봇 플러그인 KTV )</option>
+            <option value="bot_movie">봇 플러그인 MOVIE</option>
+            <option value="bot_av">봇 플러그인 AV</option>
+            <option value="share_ktv">S-KTV 게시판</option>
+            <option value="share_ftv">S-FTV 게시판</option>
+            <option value="share_movie">S-MOVIE 게시판</option>
+            <option value="share_music">S-MUSIC 게시판</option>
+            <option value="share_reading">S-READING 게시판</option>
+            <option value="share_etc">S-ETC 게시판</option>
+            <option value="share_manual">S-MANUAL 게시판</option>
+            <option value="torrent_ktv">T-KTV 게시판 게시판</option>
+            <option value="torrent_movie">T-MOVIE 게시판</option>
+            <option value="torrent_av">T-AV 게시판</option>
+            <option value="bot_vod">봇 플러그인 VOD</option>
+            <option value="vod">VOD 게시판</option>
+            <option value="direct">직접 요청</option>
+          </select>
+          <select id="option2" name="option2" class="form-control form-control-sm">
+            <option value="all">상태 전체</option>
+            <option value="ready">ready</option>
+            <option value="request">request</option>
+            <option value="completed">completed</option>
+            <option value="fail">fail</option>
+          </select>
+        </span>
+        <span class="col-md-6">
+          <input id="keyword" name="keyword" class="form-control form-control-sm w-75" type="text" placeholder="" aria-label="Search">
+          {{ macros.m_button_group([['globalSearchSearchBtn', '검색'], ['globalSearchResetBtn', '리셋']]) }}
+        </span>
+      </div>
+    </div>
+  </form>
+  <div id='page1'></div>
+  <!--2021.09.07 기다림 선택항목 버튼 선언-->
+
+  {{ macros.m_button_group([['check_all_btn', '전체 선택'],['check_none_btn', '전체 선택 취소'],['check_recopy_btn', '선택 항목 재요청']])}}
+  {{ macros.m_row_start('0') }}
+  {{ macros.m_row_end() }}
+
+  {{ macros.m_hr_head_top() }}
+  {{ macros.m_row_start('0') }}
+  {{ macros.m_col(1,  macros.m_strong('IDX')) }}
+  {{ macros.m_col(11,  macros.m_strong('Info')) }}
+  {{ macros.m_row_end() }}
+  {{ macros.m_hr_head_bottom() }}
+  <div id="list_div"></div>
+  <div id='page2'></div>
+</div>
+<style>
+  label {
+    position: relative;
+    top: -2.5px;
+  }
+
+</style>
+
+<script type="text/javascript">
+var last_list_option = "{{arg['request_item_last_list_option']}}";
+
+$(document).ready(function(){
+  tmp = last_list_option.split('|');
+  if (tmp.length == 5) {
+    $("#order").val(tmp[0]);
+    $("#keyword").val(tmp[2]);
+    $("#option1").val(tmp[3]);
+    $("#option2").val(tmp[4]);
+    globalRequestSearch(tmp[1]);
+  } else {
+    globalRequestSearch('1');
+  }
+});
+
+
+function make_list(data) {
+  str = '';
+  var now = Date.now();
+  for (i in data) {
+    str += j_row_start();
+    // 2021.09.07 기다림 체크박스를 만들기 위해서 check_번호_를 추가
+    //str += j_col(1, 'check_'+data[i].id +'_'+ data[i].id);
+    tmp = '<input type="checkbox"  id="check|'+data[i].id+'" data-id="'+data[i].id+'">';
+    tmp += '<label>&nbsp;' +data[i].id + '</label>';
+    str += j_col(1, tmp);
+    tmp = (data[i].status == 'completed') ? text_color('완료','blue') : data[i].status;
+    tmp = '상태 : ' + tmp;
+    tmp += '<br>크기 : ' + humanFileSize(data[i].size);
+    tmp += '<br>파일 : ' + data[i].count;
+    str += j_col(2, tmp);
+
+    sub = ''
+    sub += j_row_start();
+    tmp = '타입 : ' + data[i].board_type;
+    tmp += '<br>서브타입 : ' + data[i].category_type;
+    tmp += '<br>이름 : ' + data[i].target_name;
+    tmp += '<br>소스ID : ' + data[i].source_id;
+    tmp += '<br>리모트 : ' + data[i].remote_path;
+    sub += j_col(8, tmp);
+    
+    tmp = data[i].created_time + ' (추가)';
+    if (data[i].request_time != null) tmp += '<br>' + data[i].request_time + ' (서버 복사 요청)';
+    if (data[i].clone_completed_time != null) tmp += '<br>' + data[i].clone_completed_time + ' (서버 복사 완료)';
+    if (data[i].completed_time != null) tmp += '<br>' + data[i].completed_time + ' ' + text_color("(내 리모트 이동 완료)",'blue');
+
+    sub += j_col(4, tmp);
+    sub += j_row_end();
+
+    sub += j_row_start();
+    tmp = '';
+    tmp2 = j_button('globalJsonBtn', 'JSON', {'idx':i});
+    tmp2 += j_button('recopy_btn', '재요청', {'id':data[i].id});
+    tmp2 += j_button('globalDbDeleteItemBtn', '삭제', {'id':data[i].id}, 'danger');
+    tmp += j_button_group(tmp2);
+    
+    sub += j_col(12, tmp)
+    sub += j_row_end();
+    
+    str += j_col(9, sub);
+    str += j_row_end();
+    if (i != data.length -1) str += j_hr();
+  }
+  $("#list_div").html(str);
+}
+
+//2021.09.07 기다림 전체선택 로직 추가
+$("body").on('click', '#check_all_btn', function(e){
+  e.preventDefault();
+  
+  $('input[id^="check|"]').each(function(e){
+    $(this).prop("checked", true);
+  });
+});
+
+$("body").on('click', '#check_none_btn', function(e){
+  e.preventDefault();
+  $('input[id^="check|"]').each(function(e){
+    $(this).prop("checked", false);
+  });
+});
+
+$("body").on('click', '#recopy_btn', function(e){
+  e.preventDefault();
+  var item_id = $(this).data('id');
+  globalSendCommand("add_copy_force", item_id);
+});
+
+$("body").on('click', '#check_recopy_btn', function(e){
+  e.preventDefault();
+  all = $('input[id^="check|"]');
+  console.log(all)
+  str = "";
+  for (i in all) {
+    if (all[i].checked){
+      code = all[i].id.split('|')[1];
+      console.log(code)
+      str += code+",";
+    }
+  }
+  if (str == "") {
+    notify('선택하세요.', 'warning');
+    return;
+  }
+  globalSendCommand("add_copy_force", str);
+});
+
+
+$("body").on('change', '#order', function(e){
+  globalRequestSearch(1);
+});
+
+$("body").on('change', '#option1', function(e){
+  globalRequestSearch(1);
+});
+
+$("body").on('change', '#option2', function(e){
+  globalRequestSearch(1);
+});
+
+$("body").on('click', '#json_btn', function(e){
+  e.preventDefault();
+  showModal(current_data.list[$(this).data('idx')]);
+});
+
+$("body").on('click', '#db_delete_btn', function(e){
+  e.preventDefault();
+  globalSendCommand('db_delete', $(this).data('id'), null, null, function(ret){
+    globalRequestSearch(current_page);
+  });
+});
+
+</script>    
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+
+{{ macros.setting_input_text_and_buttons('request_sourceid', '소스 ID', [['ls1_btn', '폴더확인'],['size_btn', '크기확인']], value=arg['request_sourceid']) }}
+{{ macros.setting_input_text_and_buttons('request_target_folderid', 'Remote', [['ls2_btn', '폴더확인'], ['copy_btn', '복사요청']], value=arg['request_target_folderid'], desc=['파일 수 500개 이하만 실행합니다.']) }}
+
+<script type="text/javascript">
+$(document).ready(function(){
+});
+
+$("body").on('click', '#ls1_btn', function(e){
+  e.preventDefault();
+  globalSendCommand('lsjson1', $('#request_sourceid').val());
+});
+
+$("body").on('click', '#size_btn', function(e){
+  e.preventDefault();
+  globalSendCommand('size', $('#request_sourceid').val());
+});
+
+$("body").on('click', '#ls2_btn', function(e){
+  e.preventDefault();
+  globalSendCommand('lsjson2', $('#request_target_folderid').val());
+});
+
+$("body").on('click', '#copy_btn', function(e){
+  e.preventDefault();
+  globalSendCommand('copy', $('#request_sourceid').val(), $('#request_target_folderid').val());
+});
+
+</script>    
+{% endblock %}

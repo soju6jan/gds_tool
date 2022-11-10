@@ -1,5 +1,12 @@
-from .setup import *
+import requests
 from support.expand.rclone import SupportRclone
+
+from .setup import *
+
+SERVER_URL = "https://dev.sjva.me/server_gds/normal/gds/request"
+PUBLIC_CONF = os.path.join(os.path.dirname(__file__), 'files', 'public.conf')
+PUBLIC_REMOTE = 'worker0401'
+
 
 class ModuleRequest(PluginModuleBase):
 
@@ -8,9 +15,51 @@ class ModuleRequest(PluginModuleBase):
         self.db_default = {
             f'{self.name}_db_version' : '1',
             f'{self.name}_remote_path' : '',
+            'request_item_last_list_option': '',
+
+            f'request_sourceid': '',
+            f'request_target_folderid': '',
         }
         self.web_list_model = ModelRequestItem
 
+    def process_command(self, command, arg1, arg2, arg3, req):
+        ret = {'ret':'success'}
+        if command == 'add_copy_force':
+            count = 0
+            fail = 0
+            for db_id in arg1.split(','):
+                db_id = db_id.strip()
+                if db_id == '':
+                    continue
+                result = self.add_copy_force(db_id)
+                #logger.debug(d(result))
+                if result['ret'] == 'success':
+                    count += 1
+                else:
+                    fail += 1
+            ret['msg'] = f"{count}개 요청" + (f"<br>{fail}개 실패" if fail>0 else "")
+        elif command == 'db_delete':
+            if self.web_list_model.delete_by_id(arg1):
+                ret['msg'] = '삭제하였습니다.'
+            else:
+                ret['ret'] = 'warning'
+                ret['msg'] = '삭제 실패'
+        elif command == 'lsjson1':
+            remote = PUBLIC_REMOTE + ":{{{id}}}".format(id=arg1)
+            ret['json'] = SupportRclone.lsjson(remote, config_path=PUBLIC_CONF)
+            P.ModelSetting.set('request_sourceid', arg1)
+        elif command == 'size':
+            remote = PUBLIC_REMOTE + ":{{{id}}}".format(id=arg1)
+            ret['json'] = SupportRclone.size(remote, config_path=PUBLIC_CONF)
+            P.ModelSetting.set('request_sourceid', arg1)
+        elif command == 'lsjson2':
+            ret['json'] = SupportRclone.lsjson(arg1)
+            P.ModelSetting.set('request_target_folderid', arg1)
+        elif command == 'copy':
+            self.direct_request(arg1, arg2)
+            ret['msg'] = '복사 요청하였습니다.'
+
+        return jsonify(ret)
 
 
     def process_normal(self, sub, req):
@@ -38,7 +87,39 @@ class ModuleRequest(PluginModuleBase):
             logger.error(traceback.format_exc())
 
 
+    def process_api(self, sub, req):
+        try:
+            if sub == 'add_copy':
+                folder_id = req.form['folder_id']
+                folder_name = req.form['folder_name']
+                board_type = req.form['board_type']
+                category_type = req.form['category_type']
+                size = int(req.form['size'])
+                count = int(req.form['count'])
+                ddns = req.form['ddns']
+                copy_type = req.form['copy_type']
+                if ddns != F.SystemModelSetting.get('ddns'):
+                    return {'ret':'wrong_ddns'}
+                ret = self.add_copy(folder_id, folder_name, board_type, category_type, size, count, copy_type=copy_type)
+                return jsonify(ret)
 
+            elif sub == 'vod_copy':
+                fileid = req.form['fileid']
+                board_type = req.form['board_type']
+                category_type = req.form['category_type']
+                my_remote_path = self.get_my_copy_path(board_type, category_type)
+                ret = {}
+                if my_remote_path is None:
+                    ret['ret'] = 'fail'
+                    ret['data'] = 'remote path is None!!'
+                else:
+                    ret['ret'] = 'success'
+                    ret['data'] = my_remote_path
+                    self.vod_copy(fileid, my_remote_path)
+                return jsonify(ret)
+        except Exception as e: 
+            logger.error('Exception:%s', e)
+            logger.error(traceback.format_exc())
 
 
 
@@ -75,15 +156,6 @@ class ModuleRequest(PluginModuleBase):
 
 
     def add_copy(self, source_id, folder_name, board_type, category_type, size, count, copy_type='folder', remote_path=None):
-        P.logger.error(f"{source_id=}")
-        P.logger.error(f"{folder_name=}")
-        P.logger.error(f"{board_type=}")
-        P.logger.error(f"{category_type=}")
-        P.logger.error(f"{size=}")
-        P.logger.error(f"{count=}")
-        P.logger.error(f"{copy_type=}")
-        P.logger.error(f"{remote_path=}")
-
         try:
             ret = {'ret':'fail', 'remote_path':remote_path, 'server_response':None}
             
@@ -115,39 +187,64 @@ class ModuleRequest(PluginModuleBase):
             item.remote_path = ret['remote_path']
             item.save()
 
-            data = item.as_dict()
-
-            data['ddns'] = F.SystemModelSetting.get('ddns')
-            PP = F.PluginManager.get_plugin_instance('sjva')
-            data['sjva_id'] = PP.ModelSetting.get('sjva_id')
-            data['version'] = F.config['version']
-            #url = F.config['define']['WEB_DIRECT_URL'] + '/server_tool/normal/gds/request'
-            url = 'http://localhost:8888/server_tool/normal/gds/request'
-            res = requests.post(url, data={'data':json.dumps(data)})
-            ret['request_db_id'] = data['id']
-            ret['server_response'] = res.json()
-            if ret['server_response']['ret'] == 'enqueue':
-                if 'db_id' in ret['server_response'] and ret['server_response']['queue_name'] is not None:
-                    item.status = 'request'
-                    item.request_time = datetime.now()
-                    item.save()
-                    ret['ret'] = 'success'
-            else:
-                item.status = ret['server_response']['ret']
-                #item.request_time = datetime.now()
-                #item.save()
-                ret['ret'] = ret['server_response']['ret']
-
-            
+            ret = self.__server_request(item, ret)
         except Exception as e: 
             logger.error('Exception:%s', e)
             logger.error(traceback.format_exc())
             ret['ret'] = 'fail'
             ret['log'] = str(e)
-
-        logger.debug(ret)
         return ret
 
+
+    def add_copy_force(self, item_id):
+        try:
+            item = ModelRequestItem.get_by_id(item_id)
+            logger.debug(f'복사 재요청!!!!! {item_id}')
+            ret = {'ret':'fail', 'remote_path':item.remote_path, 'server_response':None}
+            can_use_share_flag = self.can_use_request(ret['remote_path'])
+            if not can_use_share_flag:
+                ret['ret'] = 'cannot_access'
+                return ret
+            ret = self.__server_request(item, ret)
+        except Exception as e: 
+            logger.error('Exception:%s', e)
+            logger.error(traceback.format_exc())
+            ret['ret'] = 'fail'
+            ret['log'] = str(e)
+        return ret
+
+
+    def __server_request(self, db_item, ret):
+        try:
+            data = db_item.as_dict()
+            data['ddns'] = F.SystemModelSetting.get('ddns')
+            if '192.168' in data['ddns'] or 'localhost' in data['ddns']:
+                ret['ret'] = 'wrong_ddns'
+                return ret
+            if F.config['version'] != requests.get(f"{data['ddns']}/version").text.strip():
+                ret['ret'] = 'wrong_ddns'
+                return ret
+            PP = F.PluginManager.get_plugin_instance('sjva')
+            data['sjva_id'] = PP.ModelSetting.get('sjva_id')
+            data['version'] = F.config['version']
+            res = requests.post(SERVER_URL, data={'data':json.dumps(data)})
+            ret['request_db_id'] = data['id']
+            ret['server_response'] = res.json()
+            if ret['server_response']['ret'] == 'enqueue':
+                if 'db_id' in ret['server_response'] and ret['server_response']['queue_name'] is not None:
+                    db_item.status = 'request'
+                    db_item.request_time = datetime.now()
+                    db_item.save()
+                    ret['ret'] = 'success'
+            else:
+                db_item.status = ret['server_response']['ret']
+                ret['ret'] = ret['server_response']['ret']
+        except Exception as e: 
+            logger.error('Exception:%s', e)
+            logger.error(traceback.format_exc())
+            ret['ret'] = 'fail'
+            ret['log'] = str(e)
+        return ret
 
 
 
@@ -198,6 +295,38 @@ class ModuleRequest(PluginModuleBase):
         thread.start()
 
 
+    def direct_request(self, source_id, remote_path):
+        def func(self, source_id, remote_path):
+            remote = PUBLIC_REMOTE + ":{{{id}}}".format(id=source_id)
+            try:
+                size_data = SupportRclone.size(remote, config_path=PUBLIC_CONF)
+                if size_data['count'] > 500:
+                    data = {'title':'요청 실패', 'data' : f"파일 수 {size_data['count']}"}
+                    F.socketio.emit("modal", data, namespace='/framework', broadcast=True)
+                    return
+            
+                lsjson = SupportRclone.lsjson(remote, config_path=PUBLIC_CONF)
+                logger.debug(d(lsjson))
+                logger.info(f"len = {lsjson}")
+                
+            except:
+                data = {'title':'요청 실패', 'data' : "접근 불가"}
+                F.socketio.emit("modal", data, namespace='/framework', broadcast=True)
+                return
+            
+            ret = self.add_copy(source_id, "", "direct", "", size_data['bytes'], size_data['count'], copy_type='folder' if len(lsjson) > 0 else "file", remote_path=remote_path)
+            logger.error(ret)
+            if ret['ret'] == 'already':
+                data = {'title':'요청 실패', 'data' : "DB에 있음"}
+                F.socketio.emit("modal", data, namespace='/framework', broadcast=True)
+                return
+
+
+
+            
+        thread = threading.Thread(target=func, args=(self, source_id, remote_path))
+        thread.setDaemon(True)
+        thread.start()
 
 
 

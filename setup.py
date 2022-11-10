@@ -12,7 +12,7 @@ setting = {
                 'name': '복사 요청',
                 'list': [
                     {'uri': 'setting', 'name': '설정'},
-                    {'uri': 'test', 'name': '요청'},
+                    {'uri': 'request', 'name': '개별 요청'},
                     {'uri': 'list', 'name': '목록'},
                 ]
             },
@@ -38,8 +38,9 @@ from plugin import *
 
 P = create_plugin_instance(setting)
 try:
-    from .mod_request import ModuleRequest, ModelRequestItem
-    P.set_module_list([ModuleRequest])
+    from .mod_request import ModelRequestItem, ModuleRequest
+    from .mod_route import ModuleRoute
+    P.set_module_list([ModuleRoute, ModuleRequest])
     P.ModelRequestItem = ModelRequestItem
 except Exception as e:
     P.logger.error(f'Exception:{str(e)}')
