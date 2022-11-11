@@ -308,7 +308,7 @@ class ModuleRequest(PluginModuleBase):
                     return
             
                 lsjson = SupportRclone.lsjson(remote, config_path=PUBLIC_CONF)
-                logger.debug(d(lsjson))
+                #logger.debug(d(lsjson))
                 logger.info(f"len = {lsjson}")
                 
             except:
@@ -322,10 +322,7 @@ class ModuleRequest(PluginModuleBase):
                 data = {'title':'요청 실패', 'data' : "DB에 있음"}
                 F.socketio.emit("modal", data, namespace='/framework', broadcast=True)
                 return
-
-
-
-            
+ 
         thread = threading.Thread(target=func, args=(self, source_id, remote_path))
         thread.setDaemon(True)
         thread.start()

@@ -5,7 +5,7 @@ setting = {
     'home_module': None,
     'menu': {
         'uri': __package__,
-        'name': '구글 드라이브 공유',
+        'name': '구드공 툴',
         'list': [
             {
                 'uri': 'request',
