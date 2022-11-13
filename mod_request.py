@@ -220,7 +220,8 @@ class ModuleRequest(PluginModuleBase):
         try:
             data = db_item.as_dict()
             data['ddns'] = F.SystemModelSetting.get('ddns')
-            if '192.168' in data['ddns'] or 'localhost' in data['ddns']:
+            tmp = data['ddns'].split('.')
+            if 'localhost' in data['ddns'] or tmp[0] in ['192', '10', '172']:
                 ret['ret'] = 'wrong_ddns'
                 return ret
             if F.config['version'] != requests.get(f"{data['ddns']}/version").text.strip():
