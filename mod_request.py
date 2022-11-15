@@ -167,10 +167,11 @@ class ModuleRequest(PluginModuleBase):
                 ret['ret'] = 'remote_path_is_none'
                 return ret
 
-            item = ModelRequestItem.get_by_source_id(source_id)
-            if item is not None:
+            already_item = ModelRequestItem.get_by_source_id(source_id)
+            if already_item is not None:
                 ret['ret'] = 'already'
-                ret['status'] = item.status
+                ret['status'] = already_item.status
+                ret['request_db_id'] = already_item.id
                 return ret
             
             can_use_share_flag = self.can_use_request(ret['remote_path'])

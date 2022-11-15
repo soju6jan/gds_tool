@@ -160,12 +160,10 @@ $("body").on('click', '#recopy_btn', function(e){
 $("body").on('click', '#check_recopy_btn', function(e){
   e.preventDefault();
   all = $('input[id^="check|"]');
-  console.log(all)
   str = "";
   for (i in all) {
     if (all[i].checked){
       code = all[i].id.split('|')[1];
-      console.log(code)
       str += code+",";
     }
   }
