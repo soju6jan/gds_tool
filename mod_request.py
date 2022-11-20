@@ -85,7 +85,7 @@ class ModuleRequest(PluginModuleBase):
                 ret = {'ret':'success'}
                 return jsonify(ret)
         except Exception as e: 
-            logger.error('Exception:%s', e)
+            logger.error(f"Exception:{str(e)}")
             logger.error(traceback.format_exc())
 
 
@@ -120,7 +120,7 @@ class ModuleRequest(PluginModuleBase):
                     self.vod_copy(fileid, my_remote_path)
                 return jsonify(ret)
         except Exception as e: 
-            logger.error('Exception:%s', e)
+            logger.error(f"Exception:{str(e)}")
             logger.error(traceback.format_exc())
 
 
@@ -142,7 +142,7 @@ class ModuleRequest(PluginModuleBase):
                 if key in remote_list:
                     return remote_list[key]
         except Exception as e: 
-            logger.error('Exception:%s', e)
+            logger.error(f"Exception:{str(e)}")
             logger.error(traceback.format_exc())
 
     
@@ -151,8 +151,8 @@ class ModuleRequest(PluginModuleBase):
             size_data = SupportRclone.size('%s:{1PwFA8w365qiPHtVQpqy_qmkQmRtklT5x}' % remote_path.split(':')[0])
             if size_data['count'] == 1 and size_data['bytes'] == 7:
                 return True
-        except Exception as exception: 
-            logger.error('Exception:%s', exception)
+        except Exception as e: 
+            logger.error(f"Exception:{str(e)}")
             logger.error(traceback.format_exc())
         return False
 
@@ -192,7 +192,7 @@ class ModuleRequest(PluginModuleBase):
 
             ret = self.__server_request(item, ret)
         except Exception as e: 
-            logger.error('Exception:%s', e)
+            logger.error(f"Exception:{str(e)}")
             logger.error(traceback.format_exc())
             ret['ret'] = 'fail'
             ret['log'] = str(e)
@@ -210,7 +210,7 @@ class ModuleRequest(PluginModuleBase):
                 return ret
             ret = self.__server_request(item, ret)
         except Exception as e: 
-            logger.error('Exception:%s', e)
+            logger.error(f"Exception:{str(e)}")
             logger.error(traceback.format_exc())
             ret['ret'] = 'fail'
             ret['log'] = str(e)
@@ -244,7 +244,7 @@ class ModuleRequest(PluginModuleBase):
                 db_item.status = ret['server_response']['ret']
                 ret['ret'] = ret['server_response']['ret']
         except Exception as e: 
-            logger.error('Exception:%s', e)
+            logger.error(f"Exception:{str(e)}")
             logger.error(traceback.format_exc())
             ret['ret'] = 'fail'
             ret['log'] = str(e)
@@ -274,7 +274,7 @@ class ModuleRequest(PluginModuleBase):
                         else:
                             break
                 except Exception as e: 
-                    logger.error('Exception:%s', e)
+                    logger.error(f"Exception:{str(e)}")
                     logger.error(traceback.format_exc())
 
                 source_remote = '{gdrive_remote}:{{{folderid}}}'.format(gdrive_remote=remote_path.split(':')[0], folderid=item.clone_folderid)
@@ -288,7 +288,7 @@ class ModuleRequest(PluginModuleBase):
                     item.status = 'fail_move'
                     item.completed_time = datetime.now()
             except Exception as e: 
-                logger.error('Exception:%s', e)
+                logger.error(f"Exception:{str(e)}")
                 logger.error(traceback.format_exc())
                 item.status = 'fail_download_exception'
             finally:

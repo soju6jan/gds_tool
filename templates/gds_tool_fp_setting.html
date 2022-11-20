@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+
+{{ macros.m_button_group([['globalSettingSaveBtn', '설정 저장']])}}
+{{ macros.m_row_start('5') }}
+{{ macros.m_row_end() }}
+{{ macros.m_hr() }}
+<form id='setting'>
+  {{ macros.setting_checkbox('fp_use_plexscan', 'Plex Scan 사용', value=arg['fp_use_plexscan'], desc=None) }}
+  <div id="fp_use_plexscan_div" class="collapse">
+  {{ macros.setting_input_textarea_wide('fp_ignore_rule', '경로 무시 규칙', desc=['경로 시작하는 변경사항은 무시. 구분자 엔터', '예) /mnt/gds/VOD/1.방송중/특집프로그램', '라이브러리 경로가 없다면 어짜피 무시되지만 이곳에서 무시하면 Scanner 호출을 하지 않습니다.'], value=arg['fp_ignore_rule'], row='10') }}
+  {{ macros.setting_input_textarea_wide('fp_change_rule', '경로 변경 규칙', desc=['소스|타겟 구분자 엔터', '예) /mnt/gds/VOD/1.방송중|/gdrive/VOD/1.방송중'], value=arg['fp_change_rule'], row='10') }}
+  </div>
+</form>
+
+<script type="text/javascript">
+
+$(document).ready(function(){
+  use_collapse("fp_use_plexscan");
+});
+
+$("body").on('change', '#fp_use_plexscan', function(e){
+  use_collapse('fp_use_plexscan');
+});
+
+</script>    
+{% endblock %}
+
