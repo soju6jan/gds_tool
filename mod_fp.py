@@ -6,15 +6,16 @@ class ModuleFP(PluginModuleBase):
     def __init__(self, P):
         super(ModuleFP, self).__init__(P, name='fp', first_menu='setting')
         self.db_default = {
-            f'{self.name}_db_version' : '2',
+            f'{self.name}_db_version' : '3',
             f'{self.name}_use_plexscan' : 'False',
             f'{self.name}_ignore_rule' : '',
             f'{self.name}_change_rule' : '',
+            f'fp_item_last_list_option' : '',
         }
         self.web_list_model = ModelFPItem
 
     def process_discord_data(self, data):
-        P.logger.warning(d(data))
+        #P.logger.warning(d(data))
         try:
             db_item = ModelFPItem.process_discord_data(data)
 
@@ -46,34 +47,19 @@ class ModuleFP(PluginModuleBase):
 
     
     def process_api(self, sub, req):
-        P.logger.error(sub)
-        P.logger.error(d(req.form))
-
-        return jsonify('')
-
-
-
-    def migration(self):
+        #P.logger.error(sub)
+        #P.logger.error(d(req.form))
         try:
-            with F.app.app_context():
-                import sqlite3
-                db_file = F.app.config['SQLALCHEMY_BINDS'][P.package_name].replace('sqlite:///', '').split('?')[0]
-                if P.ModelSetting.get(f'{self.name}_db_version') == '1':
-                    connection = sqlite3.connect(db_file)
-                    cursor = connection.cursor()
-                    query = f'ALTER TABLE fp_item ADD gds_path VARCHAR'
-                    cursor.execute(query)
-                    query = f'ALTER TABLE fp_item ADD local_path VARCHAR'
-                    cursor.execute(query)
-                    connection.close()
-                    P.ModelSetting.set(f'{self.name}_db_version', '2')
-                    db.session.flush()
-              
+            callback_id = req.form['callback_id']
+            db_item = ModelFPItem.get_by_id(callback_id.split('_')[-1])
+            db_item.status = req.form['status']
+            db_item.save()
+            return jsonify({'ret':'success'})
         except Exception as e: 
-            P.logger.error(f'Exception:{str(e)}')
+            P.logger.error(f"Exception:{str(e)}")
             P.logger.error(traceback.format_exc())
 
-        
+
 
 class ModelFPItem(ModelBase):
     P = P
@@ -99,7 +85,7 @@ class ModelFPItem(ModelBase):
     def make_query(cls, req, order='desc', search='', option1='all', option2='all'):
         with F.app.app_context():
             query = db.session.query(cls)
-            query = cls.make_query_search(F.db.session.query(cls), search, cls.target_name)
+            query = cls.make_query_search(F.db.session.query(cls), search, cls.gds_path)
 
             if option1 != 'all':
                 query = query.filter(cls.mode == option1)
