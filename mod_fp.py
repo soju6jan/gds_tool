@@ -29,6 +29,7 @@ class ModuleFP(PluginModuleBase):
                     return
             change_list = P.ModelSetting.get_list(f'{self.name}_change_rule')
             ret = db_item.gds_path
+            if ret == None: return
             for rule in change_list:
                 tmp = rule.split('|')
                 ret = ret.replace(tmp[0].strip(), tmp[1].strip())
