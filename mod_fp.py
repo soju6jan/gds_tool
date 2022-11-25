@@ -97,11 +97,16 @@ class ModelFPItem(ModelBase):
     @classmethod
     def process_discord_data(cls, data):
         try:
+            P.logger.error(data)
             db_item = ModelFPItem()
             if data['ch'] == 'bot_gds_vod':
                 db_item.mode = 'VOD'
                 db_item.data = data
                 db_item.gds_path = data['msg']['data']['r_fold'] + '/' + data['msg']['data']['r_file']
+            elif data['ch'] == 'bot_gds_movie':
+                db_item.mode = 'MOVIE'
+                db_item.data = data
+                db_item.gds_path = data['msg']['data']['gds_path']
             db_item.save()
             return db_item
         except Exception as e:
