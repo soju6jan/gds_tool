@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+
+{{ macros.m_button_group([['globalSettingSaveBtn', '설정 저장']])}}
+{{ macros.m_row_start('5') }}
+{{ macros.m_row_end() }}
+{{ macros.m_hr() }}
+<form id='setting'>
+  {{ macros.setting_input_textarea('upload_rule_filesystem', '파일시스템 변환 규칙', value=arg['upload_rule_filesystem'], desc=['형식: 변환될 remote 경로|로컬 절대경로', '예) my_remote:/mydrive|/mnt/gdrive', 'my_remote:/mydrive 리모트 경로가 로컬 /mnt/gdrive로 마운트 되어 있는 경우', '구분자 엔터']) }}
+
+
+  {{ macros.setting_input_textarea('upload_rule_plex', 'Plex 변환 규칙', value=arg['upload_rule_plex'], desc=['형식: Plex에서 사용하는 경로|변환될 remote 경로', '예) P:|my_remote:/mydrive|', 'my_remote:/mydrive 리모트 경로가 Plex의 P: 경로인 경우', '구분자 엔터']) }}
+</form>
+
+<script type="text/javascript">
+
+$(document).ready(function(){
+});
+
+</script>    
+{% endblock %}
+

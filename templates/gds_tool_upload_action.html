@@ -1,0 +1,362 @@
+{% extends "base.html" %}
+{% block content %}
+
+{{ macros.m_button_group([['do_transfer_btn', 'copy로 실행'], ['do_transfer_move_btn', 'move로 실행(주의)']])}}
+{{ macros.m_row_start('5') }}
+{{ macros.m_row_end() }}
+{{ macros.m_hr() }}
+
+<form id='transfer_setting' name='transfer_setting'>
+{{ macros.setting_select_empty('board_type', '게시판', col='6') }}
+{{ macros.setting_select_empty('category_type', '카테고리', col='6') }}
+{{ macros.setting_input_text('upload_remote_path', 'My 리모트 경로', value=arg['upload_remote_path'], desc=['업로드 할 컨텐츠 폴더.', '업로드 파일이 있는 폴더ID를 사용하는 remote:{folderid} 경로는 불가능', 'remote:{부모폴더ID}/폴더명 형태는 가능']) }}
+{{ macros.setting_buttons([['show_local_fs_modal_btn', '마운트 파일시스템'], ['show_plex_search_modal_btn', 'Plex 검색'],['rclone_lsjson_btn', '내용 보기'],['rclone_size_btn', '크기 확인']]) }}
+{{ macros.info_text('size_info', '업로드 폴더 정보') }}
+{{ macros.setting_input_text_and_buttons('folder_name', '폴더명', desc=None) }}
+{{ macros.m_hr() }}
+{{ macros.setting_input_text_and_buttons('board_title', '글 제목', [['show_meta_btn', '메타 선택']], value='') }}
+{{ macros.setting_input_text_and_buttons('board_meta_url', 'Link URL', [['meta_go_btn', 'Meta Go']], value='') }}
+{{ macros.info_text('meta_info', '메타정보', '') }}
+{{ macros.setting_input_textarea('board_content', '코멘트', value='', row='5', desc=None) }}
+{{ macros.setting_input_hidden('size', '0') }}
+</form>
+
+
+<!-- Modal -->
+<div class="modal fade" id="plex_search_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title" id="_modal_title">Plex 검색(파일명기준)</h4>
+      </div>
+      <div class="modal-body" id="_modal_body" style="word-break:break-all;">
+    	  <div class="input-group col-sm-12">
+		      <div class="col-md-9" style="align-items:left; text-align:left;">
+		        <input id="search_plex_keyword" name="search_plex_keyword" class="form-control form-control-sm w-100" type="text" placeholder="" aria-label="Search">
+		      </div>
+		      <div class="col-md-3" style="align-items:left; text-align:left;">
+		        <button id="plex_search_btn" class="btn btn-sm btn-outline-success">검색하기</button>
+		        <button id="modal_reset_btn" class="btn btn-sm btn-outline-success">리셋</button>
+		      </div>
+	      </div>
+	      <div class="input-group col-sm-12">
+		      <div style="padding-left:20px; padding-top:10px;">
+		        <span id="modal_plex_result"></span>
+		      </div>
+        </div>
+        </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">닫기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- Meta Select Modal -->
+<div class="modal fade" id="meta_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title" id="_modal_title">메타 선택</h4>
+      </div>
+      <div class="modal-body" id="meta_modal_body" style="word-break:break-all;">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">닫기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+<script type="text/javascript">
+var category_data = null;
+
+$(document).ready(function(){
+  globalSendCommand('category_list', null, null, null, function(ret) {
+    category_data = ret.data;
+    make_select(ret.data);
+  });
+});
+
+function make_select(data) {
+  str = '<select id="board_type" name="board_type" class="form-control form-control-sm">';
+  str += '<option value="" selected>' + '게시판 선택하세요' + '</option>'
+  for(var i in data) {
+    str += '<option value="' + data[i].type + '">' + data[i].name + '</option>';
+  }
+  str += '</select>'
+  $("#board_type_div").html(str);
+  $('#board_type').change();
+}
+
+$("body").on('change', '#board_type', function(e){
+  e.preventDefault();
+  var board_type = $("#board_type").val();
+  $("#category_type").empty();
+  str = '<select id="category_type" name="category_type" class="form-control form-control-sm">';
+  str += '<option value="" selected>' + '카테고리 선택하세요' + '</option>';
+  for(var i in category_data) {
+    console.log(category_data[i].type )
+    if ( category_data[i].type == board_type) {
+      for( j in category_data[i].category_list) {
+        str += '<option value="' + category_data[i].category_list[j] + '">' + category_data[i].category_list[j] + '</option>';
+      }
+      break;
+    }
+  }
+  $("#category_type_div").html(str);
+  $('#category_type').change();
+  if (board_type == 'share_movie' || board_type == 'share_ktv' || board_type == 'share_ftv') {
+    $("#folder_name").prop('disabled', true);
+  } else {
+    $('#folder_name').prop('disabled', false);
+  }
+});
+
+$("body").on('click', '#rclone_lsjson_btn', function(e) {
+  e.preventDefault();
+  return pluginRcloneLs($('#upload_remote_path').val());
+});
+
+$("body").on('click', '#rclone_size_btn', function(e) {
+  e.preventDefault();
+  remote_path = $('#upload_remote_path').val();
+  tmp = remote_path.split('/');
+  if (tmp.length == 1) {
+    notify('전통적인 rclone 경로나 REMOTE:{부모폴더ID}/폴더명 형태를 사용해야 합니다.', 'warning');
+    return;
+  }
+  globalSendCommand('size', remote_path, null, null, function(ret) {
+    str = '';
+    try {
+      str += '파일 : ' + ret.count + '개 / ' + humanFileSize(ret.bytes);
+      if (ret.count > 1000) {
+        $.notify('<strong>파일 : '+ret.count+'개<br>업로드 최대 파일수는 1,000</strong>', {type: 'warning'});
+      } else {
+        $("#size").val('' + ret.bytes);
+        tmp = remote_path.split('/');
+        $("#board_title").val(tmp[tmp.length-1]);
+        $("#folder_name").val(tmp[tmp.length-1]);
+      }
+    } catch (e) {
+      str = '실패' + ret;
+    }
+    $('#size_info').html(str);
+  });
+});
+
+$("body").on('change', '#upload_remote_path', function(e){
+  e.preventDefault();
+  $("#size_info").html('');
+  $("#size").val('0');
+});
+
+$("body").on('click', '#show_meta_btn', function(e) {
+  e.preventDefault();
+  var board_type = $('#board_type').val();
+  if (board_type == '') {
+    notify("게시판을 선택하세요", 'danger');
+    return;
+  }
+  var title = $('#board_title').val();
+  if (title == '') {
+    notify('제목을 입력하세요', 'danger');
+    return;
+  }
+  globalSendCommand('meta_info', title, board_type, null, function(ret) {
+    current_data = ret.data;
+    var data = ret.data;
+    str = '';
+    if (board_type == 'share_ktv') {
+      $('#meta_info').html(j_pre(JSON.stringify(data.daum, null, 2)));
+      var meta_url = 'https://search.daum.net/search?w=tv&q='+data.daum.title+'&irk='+data.daum.code.replace('KD', '') +'&irt=tv-program&DA=TVP';
+      if (meta_url != '')
+        $('#board_meta_url').val(meta_url);
+        return;
+    } else {
+      for (i in data) {
+        str += j_row_start();
+        if (board_type == 'share_movie') {
+          tmp = '<img src="' + data[i].image_url + '" class="img-fluid">'
+          str += j_col(2, tmp);
+          tmp = j_row_start();
+          tmp += j_info_text("제목", data[i].title + ' (' + data[i].year + ')');
+          tmp += j_info_text("원제목", data[i].title_en);
+          tmp += j_info_text("Desc", data[i].desc);
+          tmp += j_info_text("코드", data[i].code);
+          tmp += j_info_text("매칭스코어", data[i].score);
+          tmp += j_row_end();
+          str += j_col(9, tmp);
+          str += j_col(1, j_button('meta_select_btn', '선택', {'idx':i}), 'left');
+          if (i != data.length -1) str += j_hr();
+        } else if ( board_type == 'share_ftv') {
+          tmp = '<img src="' + data[i].image_url + '" class="img-fluid">'
+          str += j_col(2, tmp);
+          tmp = j_row_start();
+          tmp += j_info_text("제목", data[i].title + ' (' + data[i].year + ')');
+          tmp += j_info_text("Desc", data[i].desc);
+          tmp += j_info_text("코드", data[i].code);
+          tmp += j_info_text("매칭스코어", data[i].score);
+          tmp += j_row_end();
+          str += j_col(9, tmp);
+          str += j_col(1, j_button('meta_select_btn', '선택', {'idx':i}), 'left');
+          if (i != data.length -1) str += j_hr();
+        }
+        str += j_row_end();
+      }
+    }
+    $('#meta_modal_body').html(str);
+    $('#meta_modal').modal();
+  });
+});
+
+$("body").on('click', '#meta_select_btn', function(e) {
+  e.preventDefault();
+  var idx = $(this).data('idx');
+  var meta = current_data[idx];
+  if (meta.folder_name != null) {
+    $('#folder_name').val(meta.folder_name);
+    $('#board_title').val(meta.folder_name);
+  }
+  $('#meta_info').html(j_pre(JSON.stringify(meta, null, 2)));
+  var meta_url = meta.link;
+  if (meta_url != '')
+    $('#board_meta_url').val(meta_url);
+  $('#meta_modal').modal('hide');
+});
+
+$("body").on('click', '#meta_go_btn', function(e) {
+  e.preventDefault();
+  var url = $('#board_meta_url').val();
+  if (url == '') {
+    notify('URL이 없습니다.', 'danger');
+    return;
+  }
+  window.open(url, "_blank");
+});
+
+$("body").on('click', '#do_transfer_btn', function(e) {
+  e.preventDefault();
+  
+  do_action('copy');
+});
+
+$("body").on('click', '#do_transfer_move_btn', function(e) {
+  e.preventDefault();
+  globalConfirmModal("move 명령", "move 명령을 하면 source에서는 파일이 사라집니다.<br>계속 진행 하시겠습니까?", function() {
+    do_action('move');
+  });
+});
+
+function do_action(action) {
+  var size = $("#size").val();
+  if (size == '0') {
+    $.notify('<strong>"크기 확인" 을 먼저 진행해주세요.</strong>', {type: 'warning'});
+    return;
+  }
+  tmp = $('#folder_name').val().trim().split('/');
+  if (tmp.length > 1) {
+    notify('경로나 폴더명에 / 문자가 없어야 합니다.', 'warning');
+    return;
+  }
+  if ($('#board_type').val() == '') {
+    notify("게시판을 선택하세요", 'danger');
+    return;
+  }
+  if ($('#category_type').val() == '') {
+    notify("카테고리를 선택하세요", 'danger');
+    return;
+  }
+  var formData = getFormdata('#transfer_setting')
+  formData += '&action=' + action;
+  formData += '&meta_info=' + $('#meta_info').html();
+  formData += '&folder_name=' + $('#folder_name').val();
+  
+  globalSendCommand('upload', formData, null, null, function(ret) {
+    command_modal_show('');
+  });
+}
+
+
+$("body").on('click', '#show_local_fs_modal_btn', function(e) {
+  e.preventDefault();
+  globalSelectLocalFolder('마운트 파일시스템', '/', function(ret){
+    globalSendCommand('search_local', ret, null, null, function(ret) {
+      if (ret.ret == 'success') {
+        $('#upload_remote_path').val(ret.data);
+      }
+    });
+  });
+});
+
+
+$("body").on('click', '#show_plex_search_modal_btn', function(e) {
+  e.preventDefault();
+  $("#plex_search_modal").modal();
+});
+
+
+$("body").on('click', '#plex_search_btn', function(e) {
+  e.preventDefault();
+  var keyword = $('#search_plex_keyword').val();
+  if (keyword.length < 2) {
+    $.notify('<strong>검색어를 2글자 이상 입력해주세요</strong>', {type: 'warning'});
+    return
+  }
+  globalSendCommand('search_plex', keyword, null, null, function(ret) {
+    data = ret.data;
+    console.log('aaaaaaaaaaaaaaaaaaaa')
+    
+    if (data.length == 0) {
+      notify('검색에 실패하셨습니다.', "danger");
+      return;
+    }
+    console.log(data)
+    console.log('bbbbbbbbbbbbbbbbbbbbb')
+    str = '';
+    
+
+    for (var i in data) {
+      str += j_row_start();
+      tmp = j_row_start();
+      tmp += j_info_text('Folder', data[i].folder);
+      tmp += j_info_text('Remote', data[i].remote);
+      files = '';
+	    for (j in data[i].files) {
+        files += data[i].files[j] + '<br>';
+	    }
+      tmp += j_info_text('Files', files);
+      tmp += j_row_end();
+      str += j_col(11, tmp);
+      str += j_col(1, j_button('set_remote_path_btn', '선택', {'remote':data[i].remote}));
+      str += j_row_end();
+      if (i != data.length -1) str += j_hr();
+    }
+    document.getElementById("modal_plex_result").innerHTML = str;
+  });
+});
+
+$("#plex_search_modal").on('shown.bs.modal', function(){
+  $('#search_plex_keyword').focus().select();
+});
+
+$("#plex_search_modal").on('click', '#modal_reset_btn', function(e){
+  e.preventDefault();
+  $("#modal_plex_result").html('');
+  $("#search_plex_keyword").val('');
+});
+
+$("body").on('click', '#set_remote_path_btn', function(e){
+  e.preventDefault();
+  $('#upload_remote_path').val($(this).data('remote'));
+  $('#plex_search_modal').modal('hide');
+});
+
+</script>    
+{% endblock %}
+

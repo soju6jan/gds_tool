@@ -98,7 +98,7 @@ class ModelFPItem(ModelBase):
     @classmethod
     def process_discord_data(cls, data):
         try:
-            P.logger.error(data)
+            P.logger.debug(data)
             db_item = ModelFPItem()
             if data['ch'] == 'bot_gds_vod':
                 db_item.mode = 'VOD'

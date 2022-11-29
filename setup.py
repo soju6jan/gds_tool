@@ -25,6 +25,14 @@ setting = {
                 ]
             },
             {
+                'uri': 'upload',
+                'name': 'Share 업로드',
+                'list': [
+                    {'uri': 'setting', 'name': '설정'},
+                    {'uri': 'action', 'name': '업로드'},
+                ]
+            },
+            {
                 'uri': 'manual',
                 'name': '매뉴얼',
                 'list': [
@@ -49,7 +57,8 @@ try:
     from .mod_fp import ModuleFP
     from .mod_request import ModelRequestItem, ModuleRequest
     from .mod_route import ModuleRoute
-    P.set_module_list([ModuleRoute, ModuleRequest, ModuleFP])
+    from .mod_upload import ModuleUpload
+    P.set_module_list([ModuleRoute, ModuleRequest, ModuleFP, ModuleUpload])
     P.ModelRequestItem = ModelRequestItem
 except Exception as e:
     P.logger.error(f'Exception:{str(e)}')
