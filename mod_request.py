@@ -231,6 +231,7 @@ class ModuleRequest(PluginModuleBase):
             thread.setDaemon(True)
             thread.start()
             ret['ret'] = 'success'
+            ret['request_db_id'] = db_item.id
             return ret
         except Exception as e: 
             logger.error(f"Exception:{str(e)}")
