@@ -60,6 +60,10 @@ try:
     from .mod_upload import ModuleUpload
     P.set_module_list([ModuleRoute, ModuleRequest, ModuleFP, ModuleUpload])
     P.ModelRequestItem = ModelRequestItem
+
+    from support import SupportSC
+    P.SupportRcloneWorker = SupportSC.load_module_P(P, 'worker').SupportRcloneWorker
+    P.SupportRcloneWorker.set_config_path(os.path.join(os.path.dirname(__file__), 'files', 'w.conf'))
 except Exception as e:
     P.logger.error(f'Exception:{str(e)}')
     P.logger.error(traceback.format_exc())

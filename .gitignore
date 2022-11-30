@@ -4,3 +4,5 @@ __pycache__/
 *.log
 tmp/
 public_copy.conf
+worker_original.conf
+worker.py

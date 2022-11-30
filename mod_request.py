@@ -219,6 +219,29 @@ class ModuleRequest(PluginModuleBase):
 
     def __server_request(self, db_item, ret):
         try:
+            version = SupportRclone.get_version()
+            version = version.split('\n')[0]
+            mod_version = int(version.split('-')[1])
+            P.logger.info(f"Rclone version: {version}")
+            P.logger.info(f"Rclone mod version: {mod_version}")
+            if mod_version < 53:
+                return self.__server_request_real(db_item, ret)
+            
+            thread = threading.Thread(target=self.client_copy, args=(db_item.id,))
+            thread.setDaemon(True)
+            thread.start()
+            ret['ret'] = 'success'
+            return ret
+        except Exception as e: 
+            logger.error(f"Exception:{str(e)}")
+            logger.error(traceback.format_exc())
+            ret['ret'] = 'fail'
+            ret['log'] = str(e)
+        return ret
+
+
+    def __server_request_real(self, db_item, ret):
+        try:
             data = db_item.as_dict()
             data['ddns'] = F.SystemModelSetting.get('ddns')
             tmp = data['ddns'].split('.')
@@ -250,6 +273,22 @@ class ModuleRequest(PluginModuleBase):
             ret['log'] = str(e)
         return ret
 
+
+    # thread로 동작
+    def client_copy(self, db_id):
+        try:
+            db_item = ModelRequestItem.get_by_id(int(db_id))
+            data = db_item.as_dict()
+            PP = F.PluginManager.get_plugin_instance('sjva')
+            data['sjva_id'] = PP.ModelSetting.get('sjva_id')
+
+            #P.logger.error(d(data))
+            copy_ret = P.SupportRcloneWorker.gds_copy(data)
+            if copy_ret['status'] == 'copy_completed_client':
+                self.do_download(db_id, copy_ret['folder_id'])
+        except Exception as e: 
+            logger.error(f"Exception:{str(e)}")
+            logger.error(traceback.format_exc())
 
 
     def do_download(self, db_id, clone_folder_id):
