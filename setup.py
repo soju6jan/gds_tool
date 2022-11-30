@@ -32,13 +32,7 @@ setting = {
                     {'uri': 'action', 'name': '업로드'},
                 ]
             },
-            {
-                'uri': 'manual',
-                'name': '매뉴얼',
-                'list': [
-                    {'uri':'README.md', 'name':'README.md'}
-                ]
-            },
+            
             {
                 'uri': 'log',
                 'name': '로그',
