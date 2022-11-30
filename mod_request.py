@@ -358,7 +358,7 @@ class ModuleRequest(PluginModuleBase):
                 return
             
             ret = self.add_copy(source_id, "", "direct", "", size_data['bytes'], size_data['count'], copy_type='folder' if len(lsjson) > 0 else "file", remote_path=remote_path)
-            logger.error(ret)
+            #logger.error(ret)
             if ret['ret'] == 'already':
                 data = {'title':'요청 실패', 'data' : "DB에 있음"}
                 F.socketio.emit("modal", data, namespace='/framework', broadcast=True)
