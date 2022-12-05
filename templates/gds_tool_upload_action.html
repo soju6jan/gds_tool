@@ -111,11 +111,13 @@ $("body").on('change', '#board_type', function(e){
   }
   $("#category_type_div").html(str);
   $('#category_type').change();
+  /*
   if (board_type == 'share_movie' || board_type == 'share_ktv' || board_type == 'share_ftv') {
     $("#folder_name").prop('disabled', true);
   } else {
     $('#folder_name').prop('disabled', false);
   }
+  */
 });
 
 $("body").on('click', '#rclone_lsjson_btn', function(e) {
