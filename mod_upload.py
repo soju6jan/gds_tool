@@ -214,6 +214,9 @@ class ModuleUpload(PluginModuleBase):
                     if ret['folder_id'] != '':
                         add_text('6. 게시물 등록중...\n')
                         data = {'board_type' : board_type, 'category_type':category_type, 'board_title':board_title, 'board_content':board_content, 'board_meta_url' : board_meta_url, 'folder_name':folder_name, 'size':ret['size'], 'meta_info':meta_info, 'folder_id':ret['folder_id'], 'user_id':user_id, 'lsjson' : ret['lsjson']}
+                        if len(data['lsjson']) > 100:
+                            data['lsjson'] = data['lsjson'][:100]
+                            
                         site_ret = self.site_append(data)
                         add_text(json.dumps(site_ret) + '\n\n')
                     else:
