@@ -39,7 +39,7 @@ class ModuleFP(PluginModuleBase):
             db_item.local_path = ret
 
             PP = F.PluginManager.get_plugin_instance('plex_mate')
-            PP.ModelScanItem(ret, mode="ADD", callback_id=f"gds_tool_{db_item.id}", callback_url=ToolUtil.make_apikey_url("/gds_tool/api/fp/scan_completed")).save()
+            PP.ModelScanItem(ret, mode="ADD", callback_id=f"gds_tool_{db_item.id}", callback_url=ToolUtil.make_apikey_url("/gds_tool/normal/fp/scan_completed")).save()
             db_item.status = "SCAN_REQUEST"
             db_item.save()
         except Exception as e: 
@@ -47,15 +47,16 @@ class ModuleFP(PluginModuleBase):
             P.logger.error(traceback.format_exc())
 
     
-    def process_api(self, sub, req):
+    def process_normal(self, sub, req):
         #P.logger.error(sub)
         #P.logger.error(d(req.form))
         try:
-            callback_id = req.form['callback_id']
-            db_item = ModelFPItem.get_by_id(callback_id.split('_')[-1])
-            db_item.status = req.form['status']
-            db_item.save()
-            return jsonify({'ret':'success'})
+            if sub == 'scan_completed':
+                callback_id = req.form['callback_id']
+                db_item = ModelFPItem.get_by_id(callback_id.split('_')[-1])
+                db_item.status = req.form['status']
+                db_item.save()
+                return jsonify({'ret':'success'})
         except Exception as e: 
             P.logger.error(f"Exception:{str(e)}")
             P.logger.error(traceback.format_exc())
