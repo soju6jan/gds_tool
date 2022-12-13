@@ -186,25 +186,21 @@ $("body").on('click', '#show_meta_btn', function(e) {
         if (board_type == 'share_movie') {
           tmp = '<img src="' + data[i].image_url + '" class="img-fluid">'
           str += j_col(2, tmp);
-          tmp = j_row_start();
-          tmp += j_info_text("제목", data[i].title + ' (' + data[i].year + ')');
+          tmp = j_info_text("제목", data[i].title + ' (' + data[i].year + ')');
           tmp += j_info_text("원제목", data[i].title_en);
           tmp += j_info_text("Desc", data[i].desc);
           tmp += j_info_text("코드", data[i].code);
           tmp += j_info_text("매칭스코어", data[i].score);
-          tmp += j_row_end();
           str += j_col(9, tmp);
           str += j_col(1, j_button('meta_select_btn', '선택', {'idx':i}), 'left');
           if (i != data.length -1) str += j_hr();
         } else if ( board_type == 'share_ftv') {
           tmp = '<img src="' + data[i].image_url + '" class="img-fluid">'
           str += j_col(2, tmp);
-          tmp = j_row_start();
-          tmp += j_info_text("제목", data[i].title + ' (' + data[i].year + ')');
+          tmp = j_info_text("제목", data[i].title + ' (' + data[i].year + ')');
           tmp += j_info_text("Desc", data[i].desc);
           tmp += j_info_text("코드", data[i].code);
           tmp += j_info_text("매칭스코어", data[i].score);
-          tmp += j_row_end();
           str += j_col(9, tmp);
           str += j_col(1, j_button('meta_select_btn', '선택', {'idx':i}), 'left');
           if (i != data.length -1) str += j_hr();
