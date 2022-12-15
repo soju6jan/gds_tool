@@ -22,7 +22,11 @@ class ModuleRoute(PluginModuleBase):
             data = requests.get(url).json()['data']
             req_headers = dict(request.headers)
             headers = {}
-            if 'Range' not in req_headers or req_headers['Range'].startswith('bytes=0-'):
+            #if 'Range' not in req_headers or req_headers['Range'].startswith('bytes=0-'):
+            # by orial 
+            # 구드공 툴의 재생기능에 mod_route.py 에 Range 헤더 처리 관련해서 IOS 에서 재생시 Range: bytes=0-1 로 요청해서 재생이 안되는 문제가 있네요.
+            # startswith('bytes=0-') 으로 걸려있는 조건을 req_headers['Range'] == 'bytes=0-' 으로 정확히 체크하도록  수정해야 될거 같습니다.
+            if 'Range' not in req_headers or req_headers['Range'] == 'bytes=0-':
                 headers['Range'] = "bytes=0-1048576"
             else:
                 headers['Range'] = req_headers['Range']
