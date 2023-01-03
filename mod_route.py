@@ -14,11 +14,11 @@ class ModuleRoute(PluginModuleBase):
     
 
     def process_api(self, sub, req):
-        if sub == 'streaming':
+        if sub == 'streaming' or sub == 'streaming.mp4':
             PP = F.PluginManager.get_plugin_instance('sjva')
             sjva_id = PP.ModelSetting.get('sjva_id')
             url = f"{F.config['DEFINE']['WEB_DIRECT_URL']}/ff/ff_gds_play_two.php?type=file&id={request.args.get('id')}&user_id={sjva_id}&user_apikey={F.SystemModelSetting.get('apikey')}"
-            #P.logger.error(url)
+            P.logger.error(url)
             data = requests.get(url).json()['data']
             req_headers = dict(request.headers)
             headers = {}
