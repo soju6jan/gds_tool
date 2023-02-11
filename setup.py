@@ -45,13 +45,22 @@ setting = {
 
 
 from plugin import *
+DEFINE_DEV = False
+if os.path.exists(os.path.join(os.path.dirname(__file__), 'mod_route.py')):
+    DEFINE_DEV = True
 
 P = create_plugin_instance(setting)
 try:
     from .mod_fp import ModuleFP
     from .mod_request import ModelRequestItem, ModuleRequest
-    from .mod_route import ModuleRoute
     from .mod_upload import ModuleUpload
+
+    if DEFINE_DEV:
+        from .mod_route import ModuleRoute
+    else:
+        from support import SupportSC
+        ModuleRoute = SupportSC.load_module_P(P, 'mod_route').ModuleRoute
+
     P.set_module_list([ModuleRoute, ModuleRequest, ModuleFP, ModuleUpload])
     P.ModelRequestItem = ModelRequestItem
 
