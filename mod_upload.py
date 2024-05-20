@@ -35,7 +35,7 @@ class ModuleUpload(PluginModuleBase):
             board_type = arg2
             if board_type == 'share_movie':
                 mod_movie = F.PluginManager.get_plugin_instance('metadata').logic.get_module('movie')
-                data = mod_movie.search(title, year, site_list=['daum', 'tmdb', 'naver'], site_all=True)
+                data = mod_movie.search(title, year, site_list=['tmdb'], site_all=True)
                 for item in data:
                     item['folder_name'] = f"{SupportFile.text_for_filename(item['title'])}"
                     if item['title_en'] != '':
