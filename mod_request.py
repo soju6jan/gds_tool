@@ -100,8 +100,8 @@ class ModuleRequest(PluginModuleBase):
                 count = int(req.form['count'])
                 ddns = req.form['ddns']
                 copy_type = req.form['copy_type']
-                if ddns != F.SystemModelSetting.get('ddns'):
-                    return {'ret':'wrong_ddns'}
+                #if ddns != F.SystemModelSetting.get('ddns'):
+                #    return {'ret':'wrong_ddns'}
                 ret = self.add_copy(folder_id, folder_name, board_type, category_type, size, count, copy_type=copy_type)
                 return jsonify(ret)
 
@@ -306,11 +306,11 @@ class ModuleRequest(PluginModuleBase):
                 remote_path = item.remote_path
                 
                 try:
-                    for i in range(5):
+                    for i in range(10):
                         size_data = SupportRclone.size('%s:{%s}' % (remote_path.split(':')[0], clone_folder_id))
                         logger.debug('size_data : %s, %s', i, size_data)
                         if size_data is None or size_data['count'] == 0:
-                            time.sleep(30)
+                            time.sleep(60)
                         else:
                             break
                 except Exception as e: 
@@ -344,7 +344,7 @@ class ModuleRequest(PluginModuleBase):
             remote = PUBLIC_REMOTE + ":{{{id}}}".format(id=source_id)
             try:
                 size_data = SupportRclone.size(remote, config_path=PUBLIC_CONF)
-                if size_data['count'] > 500:
+                if size_data['count'] > 50000:
                     data = {'title':'요청 실패', 'data' : f"파일 수 {size_data['count']}"}
                     F.socketio.emit("modal", data, namespace='/framework', broadcast=True)
                     return

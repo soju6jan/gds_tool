@@ -7,3 +7,4 @@ public_copy.conf
 worker_original.conf
 worker.py
 mod_route.py
+*.log

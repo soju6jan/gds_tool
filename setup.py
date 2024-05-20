@@ -45,6 +45,7 @@ setting = {
 
 
 from plugin import *
+
 DEFINE_DEV = False
 if os.path.exists(os.path.join(os.path.dirname(__file__), 'mod_route.py')):
     DEFINE_DEV = True
@@ -65,7 +66,12 @@ try:
     P.ModelRequestItem = ModelRequestItem
 
     from support import SupportSC
-    P.SupportRcloneWorker = SupportSC.load_module_P(P, 'worker').SupportRcloneWorker
+    if DEFINE_DEV:
+        from .worker import SupportRcloneWorker
+        
+        P.SupportRcloneWorker = SupportRcloneWorker
+    else:
+        P.SupportRcloneWorker = SupportSC.load_module_P(P, 'worker').SupportRcloneWorker
     P.SupportRcloneWorker.set_config_path(os.path.join(os.path.dirname(__file__), 'files', 'w.conf'))
 except Exception as e:
     P.logger.error(f'Exception:{str(e)}')
