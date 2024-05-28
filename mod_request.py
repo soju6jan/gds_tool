@@ -146,6 +146,11 @@ class ModuleRequest(PluginModuleBase):
                 ret['ret'] = 'remote_path_is_none'
                 return ret
 
+            lsf_data = SupportRclone.lsf(ret['remote_path'])
+            if lsf_data != None and len(lsf_data) == 1 and 'Failed' in lsf_data[0]:
+                ret['ret'] = "remote_path_is_wrong"
+                return ret
+
             already_item = ModelRequestItem.get_by_source_id(source_id)
             if already_item is not None:
                 ret['ret'] = 'already'
@@ -157,6 +162,8 @@ class ModuleRequest(PluginModuleBase):
             if not can_use_share_flag:
                 ret['ret'] = 'cannot_access'
                 return ret
+            
+
             
             item = ModelRequestItem()
             item.copy_type = copy_type
