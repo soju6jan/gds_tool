@@ -49,7 +49,7 @@ from plugin import *
 DEFINE_DEV = False
 if os.path.exists(os.path.join(os.path.dirname(__file__), 'mod_route.py')):
     DEFINE_DEV = True
-
+    
 P = create_plugin_instance(setting)
 try:
     from .mod_fp import ModuleFP
@@ -68,7 +68,6 @@ try:
     from support import SupportSC
     if DEFINE_DEV:
         from .worker import SupportRcloneWorker
-        
         P.SupportRcloneWorker = SupportRcloneWorker
     else:
         P.SupportRcloneWorker = SupportSC.load_module_P(P, 'worker').SupportRcloneWorker

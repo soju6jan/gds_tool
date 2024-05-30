@@ -2,9 +2,6 @@ from support.expand.rclone import SupportRclone
 
 from .setup import *
 
-PUBLIC_CONF = os.path.join(os.path.dirname(__file__), 'files', 'public_copy.conf')
-PUBLIC_REMOTE = 'worker0401'
-
 
 class ModuleRequest(PluginModuleBase):
 
@@ -19,9 +16,7 @@ class ModuleRequest(PluginModuleBase):
             f'request_target_folderid': '',
         }
         self.web_list_model = ModelRequestItem
-        if os.path.exists(PUBLIC_CONF) == False:
-            shutil.copy(PUBLIC_CONF.replace('public_copy.conf', 'public.conf'), PUBLIC_CONF)
-
+        
 
     def process_command(self, command, arg1, arg2, arg3, req):
         ret = {'ret':'success'}
@@ -46,12 +41,12 @@ class ModuleRequest(PluginModuleBase):
                 ret['ret'] = 'warning'
                 ret['msg'] = '삭제 실패'
         elif command == 'lsjson1':
-            remote = PUBLIC_REMOTE + ":{{{id}}}".format(id=arg1)
-            ret['json'] = SupportRclone.lsjson(remote, config_path=PUBLIC_CONF)
+            remote = "worker" + ":{{{id}}}".format(id=arg1)
+            ret['json'] = P.SupportRcloneWorker.lsjson(remote)
             P.ModelSetting.set('request_sourceid', arg1)
         elif command == 'size':
-            remote = PUBLIC_REMOTE + ":{{{id}}}".format(id=arg1)
-            ret['json'] = SupportRclone.size(remote, config_path=PUBLIC_CONF)
+            remote = "worker" + ":{{{id}}}".format(id=arg1)
+            ret['json'] = P.SupportRcloneWorker.size(remote)
             P.ModelSetting.set('request_sourceid', arg1)
         elif command == 'lsjson2':
             ret['json'] = SupportRclone.lsjson(arg1)
@@ -146,11 +141,6 @@ class ModuleRequest(PluginModuleBase):
                 ret['ret'] = 'remote_path_is_none'
                 return ret
 
-            lsf_data = SupportRclone.lsf(ret['remote_path'])
-            if lsf_data != None and len(lsf_data) == 1 and 'Failed' in lsf_data[0]:
-                ret['ret'] = "remote_path_is_wrong"
-                return ret
-
             already_item = ModelRequestItem.get_by_source_id(source_id)
             if already_item is not None:
                 ret['ret'] = 'already'
@@ -163,8 +153,6 @@ class ModuleRequest(PluginModuleBase):
                 ret['ret'] = 'cannot_access'
                 return ret
             
-
-            
             item = ModelRequestItem()
             item.copy_type = copy_type
             item.source_id = source_id
@@ -175,6 +163,13 @@ class ModuleRequest(PluginModuleBase):
             item.count = count
             item.remote_path = ret['remote_path']
             item.save()
+
+            lsf_data = SupportRclone.lsf(ret['remote_path'])
+            if lsf_data != None and len(lsf_data) == 1 and 'Failed' in lsf_data[0]:
+                item.status = "fail_remote_path_is_wrong"
+                item.save()
+                return ret
+
             ret = self.add_copy_thread_start(item, ret)
         except Exception as e: 
             logger.error(f"Exception:{str(e)}")
@@ -263,24 +258,19 @@ class ModuleRequest(PluginModuleBase):
 
     def direct_request(self, source_id, remote_path):
         def func(self, source_id, remote_path):
-            remote = PUBLIC_REMOTE + ":{{{id}}}".format(id=source_id)
+            remote = "worker" + ":{{{id}}}".format(id=source_id)
             try:
-                size_data = SupportRclone.size(remote, config_path=PUBLIC_CONF)
-                if size_data['count'] > 500:
+                size_data = P.SupportRcloneWorker.size(remote)
+                if size_data['count'] > 1000:
                     data = {'title':'요청 실패', 'data' : f"파일 수 {size_data['count']}"}
                     F.socketio.emit("modal", data, namespace='/framework', broadcast=True)
                     return
-            
-                lsjson = SupportRclone.lsjson(remote, config_path=PUBLIC_CONF)
-                #logger.debug(d(lsjson))
-                #logger.info(f"len = {lsjson}")
-                
             except:
                 data = {'title':'요청 실패', 'data' : "접근 불가"}
                 F.socketio.emit("modal", data, namespace='/framework', broadcast=True)
                 return
-            
-            ret = self.add_copy(source_id, "", "direct", "", size_data['bytes'], size_data['count'], copy_type='folder' if len(lsjson) > 0 else "file", remote_path=remote_path)
+            #ret = self.add_copy(source_id, "", "direct", "", size_data['bytes'], size_data['count'], copy_type='folder' if len(lsjson) > 0 else "file", remote_path=remote_path)
+            ret = self.add_copy(source_id, "", "direct", "", size_data['bytes'], size_data['count'], copy_type='folder', remote_path=remote_path)
             #logger.error(ret)
             if ret['ret'] == 'already':
                 data = {'title':'요청 실패', 'data' : "DB에 있음"}
