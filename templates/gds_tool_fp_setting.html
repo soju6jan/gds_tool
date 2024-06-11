@@ -4,13 +4,29 @@
 {{ macros.m_button_group([['globalSettingSaveBtn', '설정 저장']])}}
 {{ macros.m_row_start('5') }}
 {{ macros.m_row_end() }}
-{{ macros.m_hr() }}
+<nav>
+  {{ macros.m_tab_head_start() }}
+    {{ macros.m_tab_head('normal', '설정', true) }}
+    {{ macros.m_tab_head('db', 'DB', false) }}
+  {{ macros.m_tab_head_end() }}
+</nav>
+
 <form id='setting'>
+<div class="tab-content" id="nav-tabContent">
+{{ macros.m_tab_content_start('normal', true) }}
   {{ macros.setting_checkbox('fp_use_plexscan', 'Plex Scan 사용', value=arg['fp_use_plexscan'], desc=None) }}
   <div id="fp_use_plexscan_div" class="collapse">
-  {{ macros.setting_input_textarea_wide('fp_ignore_rule', '경로 무시 규칙', desc=['경로 시작하는 변경사항은 무시. 구분자 엔터', '예) /mnt/gds/VOD/1.방송중/특집프로그램', '라이브러리 경로가 없다면 어짜피 무시되지만 이곳에서 무시하면 Scanner 호출을 하지 않습니다.'], value=arg['fp_ignore_rule'], row='10') }}
-  {{ macros.setting_input_textarea_wide('fp_change_rule', '경로 변경 규칙', desc=['소스|타겟 구분자 엔터', '예) /mnt/gds/VOD/1.방송중|/gdrive/VOD/1.방송중'], value=arg['fp_change_rule'], row='10') }}
+  {{ macros.setting_input_textarea_wide('fp_ignore_rule', '경로 무시 규칙', desc=['이 경로로 시작하는 변경사항은 무시. 구분자 엔터', '예: /ROOT/GDRIVE/VIDEO/국내TV/드라마', '라이브러리 경로가 없다면 어짜피 무시되지만 이곳에서 무시하면 Scanner 호출을 하지 않습니다.'], value=arg['fp_ignore_rule'], row='10') }}
+  {{ macros.setting_input_textarea_wide('fp_change_rule', '경로 변경 규칙', desc=['소스|타겟 구분자 엔터', '예: /ROOT|/mnt/gds2'], value=arg['fp_change_rule'], row='10') }}
   </div>
+{{ macros.m_tab_content_end() }}
+
+{{ macros.m_tab_content_start('db', false) }}
+  {{ macros.setting_input_text_and_buttons('fp_db_delete_day', 'DB 삭제 기간', [['globalDbDeleteDayBtn', '기간 적용 삭제', [['tag_id','fp_db_delete_day']]], ['globalDbDeleteBtn', '전체 삭제']], value=arg['fp_db_delete_day'], col='6') }} 
+  {{ macros.setting_checkbox('fp_db_auto_delete', 'DB 자동 삭제', value=arg['fp_db_auto_delete'], desc=['On : 기간 적용하여 DB를 자동 삭제합니다.']) }}
+{{ macros.m_tab_content_end() }} 
+
+</div><!--tab-content-->
 </form>
 
 <script type="text/javascript">

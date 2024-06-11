@@ -21,7 +21,9 @@ setting = {
                 'name': 'GDS 변경사항',
                 'list': [
                     {'uri': 'setting', 'name': '설정'},
-                    {'uri': 'list', 'name': '목록'},
+                    {'uri': 'list', 'name': '수신목록'},
+                    {'uri': 'broadcast', 'name': '방송하기'},
+                    {'uri': 'manual/files/gds.md', 'name': '매뉴얼'},
                 ]
             },
             {
@@ -46,17 +48,13 @@ setting = {
 
 from plugin import *
 
-DEFINE_DEV = False
-if os.path.exists(os.path.join(os.path.dirname(__file__), 'mod_route.py')):
-    DEFINE_DEV = True
-    
 P = create_plugin_instance(setting)
 try:
     from .mod_fp import ModuleFP
     from .mod_request import ModelRequestItem, ModuleRequest
     from .mod_upload import ModuleUpload
 
-    if DEFINE_DEV:
+    if os.path.exists(os.path.join(os.path.dirname(__file__), 'mod_route.py')):
         from .mod_route import ModuleRoute
     else:
         from support import SupportSC
@@ -66,7 +64,7 @@ try:
     P.ModelRequestItem = ModelRequestItem
 
     from support import SupportSC
-    if DEFINE_DEV:
+    if os.path.exists(os.path.join(os.path.dirname(__file__), 'worker.py')):
         from .worker import SupportRcloneWorker
         P.SupportRcloneWorker = SupportRcloneWorker
     else:

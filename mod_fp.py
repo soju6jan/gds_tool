@@ -1,3 +1,5 @@
+from support import SupportDiscord
+
 from .setup import *
 
 
@@ -6,11 +8,14 @@ class ModuleFP(PluginModuleBase):
     def __init__(self, P):
         super(ModuleFP, self).__init__(P, name='fp', first_menu='setting')
         self.db_default = {
-            f'{self.name}_db_version' : '3',
+            f'{self.name}_db_version' : '4',
             f'{self.name}_use_plexscan' : 'False',
             f'{self.name}_ignore_rule' : '',
             f'{self.name}_change_rule' : '',
             f'fp_item_last_list_option' : '',
+            f'{self.name}_db_delete_day' : '30',
+            f'{self.name}_db_auto_delete' : 'False',
+            f'{self.name}_broadcast_path' : '/ROOT/GDRIVE/VIDEO',
         }
         self.web_list_model = ModelFPItem
 
@@ -39,7 +44,9 @@ class ModuleFP(PluginModuleBase):
             db_item.local_path = ret
 
             PP = F.PluginManager.get_plugin_instance('plex_mate')
-            PP.ModelScanItem(ret, mode="ADD", callback_id=f"gds_tool_{db_item.id}", callback_url=ToolUtil.make_apikey_url("/gds_tool/normal/fp/scan_completed")).save()
+            #PP.ModelScanItem(ret, mode="ADD", callback_id=f"gds_tool_{db_item.id}", callback_url=ToolUtil.make_apikey_url("/gds_tool/normal/fp/scan_completed")).save()
+            PP.ModelScanItem(ret, mode=db_item.scan_mode, callback_id=f"gds_tool_{db_item.id}", callback_url=ToolUtil.make_apikey_url("/gds_tool/normal/fp/scan_completed")).save()
+
             db_item.status = "SCAN_REQUEST"
             db_item.save()
         except Exception as e: 
@@ -61,6 +68,54 @@ class ModuleFP(PluginModuleBase):
             P.logger.error(f"Exception:{str(e)}")
             P.logger.error(traceback.format_exc())
 
+    def process_command(self, command, arg1, arg2, arg3, req):
+        ret = {'ret':'success'}
+        if command == 'broadcast':
+            arg2 = arg2.rstrip('/')
+            tmps = arg2.split('/')
+            P.ModelSetting.set(f'{self.name}_broadcast_path', arg2)
+            if len(tmps) < 7:
+                ret['ret'] = 'warning'
+                ret['msg'] = '범위가 너무 큽니다.'
+            elif tmps[-1] in ['0Z', '가', '나', '다', '라', '마', '바', '사', '아', '자', '차', '카', '타', '파', '하']:
+                    ret['ret'] = 'warning'
+                    ret['msg'] = '컨텐츠 폴더 혹은 파일을 지정하세요.'
+            elif arg2.startswith('/ROOT/GDRIVE') == False:
+                ret['ret'] = 'warning'
+                ret['msg'] = '/ROOT/GDRIVE 로 시작해야 합니다.'
+            else:
+                bot = {
+                    't1': 'gds_tool',
+                    't2': 'fp',
+                    't3': 'user',
+                    'data': {
+                        'gds_path': arg2,
+                        'scan_mode': arg1,
+                    }
+                }
+                SupportDiscord.send_discord_bot_message(json.dumps(bot), "https://discord.com/api/webhooks/1250002567623344171/oeDaF6COyoVzqdw0BZk3qgT4hsKtmpqjdQJTTVRS-fCq0gBM7-J7rr52fXnziiAhkWT1")
+                ret['msg'] = '전송하였습니다.'
+        return jsonify(ret)
+
+
+    def migration(self):
+        try:
+            import sqlite3
+            db_file = F.app.config['SQLALCHEMY_BINDS'][P.package_name].replace('sqlite:///', '').split('?')[0]
+            #logger.error(db_file)
+            if P.ModelSetting.get(f'{self.name}_db_version') == '3':
+                connection = sqlite3.connect(db_file)
+                cursor = connection.cursor()
+                query = f'ALTER TABLE "{self.name}_item" ADD scan_mode VARCHAR'
+                cursor.execute(query)
+                connection.close()
+                P.ModelSetting.set(f'{self.name}_db_version', '4')
+                db.session.flush()
+        except Exception as e:
+            logger.error(f"Exception:{str(e)}")
+            logger.error(traceback.format_exc())
+
+
 
 
 class ModelFPItem(ModelBase):
@@ -77,6 +132,7 @@ class ModelFPItem(ModelBase):
     status = db.Column(db.String)
     gds_path = db.Column(db.String)
     local_path = db.Column(db.String)
+    scan_mode = db.Column(db.String)
 
     def __init__(self):
         self.created_time = datetime.now()
@@ -103,10 +159,17 @@ class ModelFPItem(ModelBase):
             db_item = ModelFPItem()
             if data['ch'] == 'bot_gds_vod':
                 db_item.mode = 'VOD'
+                db_item.scan_mode = 'ADD'
                 db_item.data = data
                 db_item.gds_path = data['msg']['data']['r_fold'] + '/' + data['msg']['data']['r_file']
             elif data['ch'] == 'bot_gds_movie':
                 db_item.mode = 'MOVIE'
+                db_item.scan_mode = 'ADD'
+                db_item.data = data
+                db_item.gds_path = data['msg']['data']['gds_path']
+            elif data['ch'] == 'bot_gds_user':
+                db_item.mode = 'USER'
+                db_item.scan_mode = data['msg']['data']['scan_mode']
                 db_item.data = data
                 db_item.gds_path = data['msg']['data']['gds_path']
             db_item.save()

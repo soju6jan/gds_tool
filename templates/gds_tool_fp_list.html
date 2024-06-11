@@ -67,27 +67,39 @@ function make_list(data) {
   for (i in data) {
     str += j_row_start();
     str += j_col(1, data[i].id);
-    str += j_col(1, data[i].status);
-
-    sub = ''
-    sub += j_row_start();
-    tmp = j_info_text_left("GDS", data[i].gds_path, 2, 10);
-    tmp += j_info_text_left("LOCAL", data[i].local_path, 2, 10);
-    sub += j_col(10, tmp);
+    str += j_col(1, data[i].mode);
+    if (data[i].scan_mode == null) {
+      tmp = 'ADD';
+    } else {
+      tmp = data[i].scan_mode;
+    }
+    str += j_col(1, tmp);
+    
+    if (data[i].status == 'READY') tmp = "준비";
+    else if (data[i].status == 'FINISH_ADD') tmp = text_color("정상 추가", 'blue');
+    else if (data[i].status == 'FINISH_ADD_FOLDER') tmp = text_color("정상 추가 폴더", 'blue');
+    else if (data[i].status == 'FINISH_ADD_ALREADY_IN_DB') tmp = text_color("DB에 이미 있음", 'blue');
+    else if (data[i].status == 'FINISH_ALREADY_IN_QUEUE') tmp = text_color("큐에 이미 있음", 'blue');
+    else if (data[i].status == 'FINISH_NOT_FIND_LIBRARY') tmp = text_color("라이브러리 폴더 ✖️", 'red');
+    else if (data[i].status == 'FINISH_TIMEOVER') tmp = "대기시간 오버";
+    else tmp = data[i].status;
+    str += j_col(4, tmp);
     
     tmp = data[i].created_time + ' (추가)';
-    sub += j_col(2, tmp, 'right');
-    sub += j_row_end();
-
-    sub += j_row_start();
+    str += j_col(3, tmp, 'right');
     tmp = '';
     tmp2 = j_button('globalJsonBtn', 'JSON', {'idx':i}, 'success', true, true);
     tmp2 += j_button('globalDbDeleteItemBtn', '삭제', {'id':data[i].id}, 'danger', true, true);
     tmp += j_button_group(tmp2);
-    sub += j_col(12, tmp)
-    sub += j_row_end();
-   
-    str += j_col(10, sub);
+    
+    str += j_col(2, tmp, 'right');
+    str += j_row_end();
+
+    str += j_row_start();
+    str += j_col(1, "");
+    tmp = j_info_text_left("GDS", data[i].gds_path, 1, 11);
+    tmp += j_info_text_left("LOCAL", data[i].local_path, 1, 11);
+    str += j_col(10, tmp);
     str += j_row_end();
     if (i != data.length -1) str += j_hr();
   }

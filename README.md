@@ -1,5 +1,8 @@
 # gds_tool
 
-C:\work\FlaskFarm\data\bin\rclone.exe --config C:\work\FlaskFarm\data\db\rclone.conf backend getid "GDS:/VOD/1.방송중/드라마/치얼업 (2022) [SBS]"     
+## Changelog
+- 1.1.8 (2024.06.11)   
+  GDS 변경사항 - 방송하기 추가.   
+  PLEX MATE 4단계 구드 이미지 호스팅 코드 암호화로 추가.   
+  
 
-1IFO4DhOxC50K9wIREWHsv6pVfrxhBK05

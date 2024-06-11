@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+
+{{ macros.info_text_big('', '<GDS 변경사항 - 방송>', '')}}
+{{ macros.setting_input_textarea('fp_broadcast_path', '파일 또는 폴더',  value=arg['fp_broadcast_path'], desc=['/ROOT/GDRIVE 로 시작']) }}
+{{ macros.setting_buttons([['add_btn', '추가 모드'], ['remove_btn', '삭제 모드'], ['refresh_btn', '메타새로고침 모드']]) }}
+    
+
+<script type="text/javascript">
+
+$("body").on('click', '#select_target_btn', function(e){
+  e.preventDefault();
+  var path = $('#scan_manual_target').val().trim();
+  if (path == '') path = '/';
+  globalSelectLocalFile("스캔 파일(폴더)", path, function(result){
+    $('#scan_manual_target').val(result);
+  });
+});
+
+$("body").on('click', '#add_btn', function(e){
+  e.preventDefault();
+  globalSendCommand('broadcast', 'ADD', $('#fp_broadcast_path').val().trim());
+});
+
+$("body").on('click', '#remove_btn', function(e){
+  e.preventDefault();
+  globalSendCommand('broadcast', 'REMOVE', $('#fp_broadcast_path').val().trim());
+});
+
+$("body").on('click', '#refresh_btn', function(e){
+  e.preventDefault();
+  globalSendCommand('broadcast', 'REFRESH', $('#fp_broadcast_path').val().trim());
+});
+
+</script>    
+{% endblock %}
