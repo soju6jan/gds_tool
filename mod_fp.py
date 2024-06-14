@@ -69,19 +69,28 @@ class ModuleFP(PluginModuleBase):
             P.logger.error(traceback.format_exc())
 
     def process_command(self, command, arg1, arg2, arg3, req):
-        ret = {'ret':'success'}
         if command == 'broadcast':
             arg2 = arg2.rstrip('/')
-            tmps = arg2.split('/')
             P.ModelSetting.set(f'{self.name}_broadcast_path', arg2)
+            return self.do_broadcast(arg2, arg1)
+
+    def process_api(self, sub, req):
+        if sub == 'broadcast':
+            return self.do_broadcast(req.args.get('gds_path'), req.args.get('scan_mode', 'ADD'))
+    
+    def do_broadcast(self, gds_path, scan_mode):
+        try:
+            ret = {'ret':'success'}
+            gds_path = gds_path.rstrip('/')
+            tmps = gds_path.split('/')
             if len(tmps) < 7:
-                ret['ret'] = 'warning'
+                ret['ret'] = 'error'
                 ret['msg'] = '범위가 너무 큽니다.'
             elif tmps[-1] in ['0Z', '가', '나', '다', '라', '마', '바', '사', '아', '자', '차', '카', '타', '파', '하']:
                     ret['ret'] = 'warning'
                     ret['msg'] = '컨텐츠 폴더 혹은 파일을 지정하세요.'
-            elif arg2.startswith('/ROOT/GDRIVE') == False:
-                ret['ret'] = 'warning'
+            elif gds_path.startswith('/ROOT/GDRIVE') == False:
+                ret['ret'] = 'error'
                 ret['msg'] = '/ROOT/GDRIVE 로 시작해야 합니다.'
             else:
                 bot = {
@@ -89,12 +98,18 @@ class ModuleFP(PluginModuleBase):
                     't2': 'fp',
                     't3': 'user',
                     'data': {
-                        'gds_path': arg2,
-                        'scan_mode': arg1,
+                        'gds_path': gds_path,
+                        'scan_mode': scan_mode,
                     }
                 }
                 SupportDiscord.send_discord_bot_message(json.dumps(bot), "https://discord.com/api/webhooks/1250002567623344171/oeDaF6COyoVzqdw0BZk3qgT4hsKtmpqjdQJTTVRS-fCq0gBM7-J7rr52fXnziiAhkWT1")
                 ret['msg'] = '전송하였습니다.'
+            return jsonify(ret)
+        except Exception as e: 
+            P.logger.error(f"Exception:{str(e)}")
+            P.logger.error(traceback.format_exc())
+            ret['ret'] = 'error'
+            ret['msg'] = str(e)
         return jsonify(ret)
 
 
