@@ -1,6 +1,9 @@
 # gds_tool
 
 ## Changelog
+- 1.1.12 (2024.06.15)  
+  SSGDrive.download_range method 추가.   
+
 - 1.1.11 (2024.06.13)   
   방송하기 API 추가   
   
