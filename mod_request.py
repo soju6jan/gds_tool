@@ -11,9 +11,10 @@ class ModuleRequest(PluginModuleBase):
             f'{self.name}_db_version' : '1',
             f'{self.name}_remote_path' : '',
             'request_item_last_list_option': '',
-
             f'request_sourceid': '',
             f'request_target_folderid': '',
+            f'{self.name}_db_delete_day' : '30',
+            f'{self.name}_db_auto_delete' : 'False',
         }
         self.web_list_model = ModelRequestItem
         

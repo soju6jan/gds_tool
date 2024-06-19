@@ -4,9 +4,26 @@
 {{ macros.m_button_group([['globalSettingSaveBtn', '설정 저장']])}}
 {{ macros.m_row_start('5') }}
 {{ macros.m_row_end() }}
-{{ macros.m_hr() }}
+
+<nav>
+  {{ macros.m_tab_head_start() }}
+    {{ macros.m_tab_head('normal', '설정', true) }}
+    {{ macros.m_tab_head('db', 'DB', false) }}
+  {{ macros.m_tab_head_end() }}
+</nav>
+
 <form id='setting'>
-  {{ macros.setting_input_textarea_wide('request_remote_path', 'Copy Dest 리모트 정보', desc=['copy 리모트 정보', '형식 : 게시판이름,카테고리 = 리모트경로', '예) share_movie,국내 = my_remote:/video/movie/download', '게시판이름,카테고리가 정보가 있는 경우 설정된 곳으로 복사합니다.', '게시판이름만 있는 경우 카테고리에 상관없이 설정된 값에 복사합니다.', '정보가 없는 경우 default 에 복사합니다. default 값은 필수입니다.'], value=arg['request_remote_path'], row='20') }}
+<div class="tab-content" id="nav-tabContent">
+  {{ macros.m_tab_content_start('normal', true) }}  
+  {{ macros.setting_input_textarea_wide('request_remote_path', 'Copy Dest 리모트 정보', desc=['copy 리모트 정보', '형식 : 게시판이름,카테고리 = 리모트경로', '예: share_movie,국내 = my_remote:/video/movie/download', '게시판이름,카테고리가 정보가 있는 경우 설정된 곳으로 복사합니다.', '게시판이름만 있는 경우 카테고리에 상관없이 설정된 값에 복사합니다.', '정보가 없는 경우 default 에 복사합니다. default 값은 필수입니다.'], value=arg['request_remote_path'], row='20') }}
+{{ macros.m_tab_content_end() }}
+
+{{ macros.m_tab_content_start('db', false) }}
+  {{ macros.setting_input_text_and_buttons('request_db_delete_day', 'DB 삭제 기간', [['globalDbDeleteDayBtn', '기간 적용 삭제', [['tag_id','request_db_delete_day']]], ['globalDbDeleteBtn', '전체 삭제']], value=arg['request_db_delete_day'], col='6') }} 
+  {{ macros.setting_checkbox('request_db_auto_delete', 'DB 자동 삭제', value=arg['request_db_auto_delete'], desc=['On : 기간 적용하여 DB를 자동 삭제합니다.']) }}
+{{ macros.m_tab_content_end() }} 
+  
+</div><!--tab-content-->  
 </form>
 
 <script type="text/javascript">

@@ -1,6 +1,9 @@
 # gds_tool
 
 ## Changelog
+- 1.1.13 (2024.06.19)   
+  복사요청 DB 자동삭제 설정 추가.   
+
 - 1.1.12 (2024.06.15)  
   SSGDrive.download_range method 추가.   
 
