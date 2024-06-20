@@ -118,7 +118,8 @@ class ModuleFP(PluginModuleBase):
             import sqlite3
             db_file = F.app.config['SQLALCHEMY_BINDS'][P.package_name].replace('sqlite:///', '').split('?')[0]
             #logger.error(db_file)
-            if P.ModelSetting.get(f'{self.name}_db_version') == '3':
+            #if P.ModelSetting.get(f'{self.name}_db_version') == '3':
+            if P.ModelSetting.get(f'{self.name}_db_version') in ['1', '2', '3']:
                 connection = sqlite3.connect(db_file)
                 cursor = connection.cursor()
                 query = f'ALTER TABLE "{self.name}_item" ADD scan_mode VARCHAR'
