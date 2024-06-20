@@ -120,13 +120,14 @@ class ModuleFP(PluginModuleBase):
             #logger.error(db_file)
             #if P.ModelSetting.get(f'{self.name}_db_version') == '3':
             if P.ModelSetting.get(f'{self.name}_db_version') in ['1', '2', '3']:
-                connection = sqlite3.connect(db_file)
-                cursor = connection.cursor()
-                query = f'ALTER TABLE "{self.name}_item" ADD scan_mode VARCHAR'
-                cursor.execute(query)
-                connection.close()
-                P.ModelSetting.set(f'{self.name}_db_version', '4')
-                db.session.flush()
+                with F.app.app_context():
+                    connection = sqlite3.connect(db_file)
+                    cursor = connection.cursor()
+                    query = f'ALTER TABLE "{self.name}_item" ADD scan_mode VARCHAR'
+                    cursor.execute(query)
+                    connection.close()
+                    P.ModelSetting.set(f'{self.name}_db_version', '4')
+                    db.session.flush()
         except Exception as e:
             logger.error(f"Exception:{str(e)}")
             logger.error(traceback.format_exc())
