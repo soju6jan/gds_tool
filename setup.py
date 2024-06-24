@@ -34,7 +34,14 @@ setting = {
                     {'uri': 'action', 'name': '업로드'},
                 ]
             },
-            
+            {
+                'uri': 'cdn',
+                'name': 'CDN',
+                'list': [
+                    {'uri': 'image', 'name': '이미지 업로드'},
+                    {'uri': 'manual/files/cdn.md', 'name': '매뉴얼'},
+                ]
+            },
             {
                 'uri': 'log',
                 'name': '로그',
@@ -50,6 +57,7 @@ from plugin import *
 
 P = create_plugin_instance(setting)
 try:
+    from .mod_cdn import ModuleCdn
     from .mod_fp import ModuleFP
     from .mod_request import ModelRequestItem, ModuleRequest
     from .mod_upload import ModuleUpload
@@ -60,7 +68,7 @@ try:
         from support import SupportSC
         ModuleRoute = SupportSC.load_module_P(P, 'mod_route').ModuleRoute
 
-    P.set_module_list([ModuleRoute, ModuleRequest, ModuleFP, ModuleUpload])
+    P.set_module_list([ModuleRoute, ModuleRequest, ModuleFP, ModuleUpload, ModuleCdn])
     P.ModelRequestItem = ModelRequestItem
 
     from support import SupportSC
