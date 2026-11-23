@@ -271,9 +271,9 @@ function do_action(action) {
     return;
   }
   var formData = getFormdata('#transfer_setting')
-  formData += '&action=' + action;
-  formData += '&meta_info=' + $('#meta_info').html();
-  formData += '&folder_name=' + $('#folder_name').val();
+  formData += '&action=' + encodeURIComponent(action);
+  formData += '&meta_info=' + encodeURIComponent($('#meta_info').html());
+  formData += '&folder_name=' + encodeURIComponent($('#folder_name').val());
   
   globalSendCommand('upload', formData, null, null, function(ret) {
     command_modal_show('');

@@ -1,3 +1,5 @@
+from urllib.parse import urljoin
+
 from support import SupportDiscord
 
 from .setup import *
@@ -44,26 +46,18 @@ class ModuleFP(PluginModuleBase):
             db_item.local_path = ret
 
             PP = F.PluginManager.get_plugin_instance('plex_mate')
-            #PP.ModelScanItem(ret, mode="ADD", callback_id=f"gds_tool_{db_item.id}", callback_url=ToolUtil.make_apikey_url("/gds_tool/normal/fp/scan_completed")).save()
-            PP.ModelScanItem(ret, mode=db_item.scan_mode, callback_id=f"gds_tool_{db_item.id}", callback_url=ToolUtil.make_apikey_url("/gds_tool/normal/fp/scan_completed")).save()
+            PP.ModelScanItem(
+                ret,
+                mode=db_item.scan_mode,
+                callback_id=f"gds_tool_{db_item.id}",
+                callback_url=urljoin(
+                    F.SystemModelSetting.get('ddns'),
+                    "/gds_tool/api/fp/scan_completed",
+                ),
+            ).save()
 
             db_item.status = "SCAN_REQUEST"
             db_item.save()
-        except Exception as e: 
-            P.logger.error(f"Exception:{str(e)}")
-            P.logger.error(traceback.format_exc())
-
-    
-    def process_normal(self, sub, req):
-        #P.logger.error(sub)
-        #P.logger.error(d(req.form))
-        try:
-            if sub == 'scan_completed':
-                callback_id = req.form['callback_id']
-                db_item = ModelFPItem.get_by_id(callback_id.split('_')[-1])
-                db_item.status = req.form['status']
-                db_item.save()
-                return jsonify({'ret':'success'})
         except Exception as e: 
             P.logger.error(f"Exception:{str(e)}")
             P.logger.error(traceback.format_exc())
@@ -74,7 +68,25 @@ class ModuleFP(PluginModuleBase):
             P.ModelSetting.set(f'{self.name}_broadcast_path', arg2)
             return self.do_broadcast(arg2, arg1)
 
+    def process_normal(self, sub, req):
+        if sub == 'scan_completed':
+            P.logger.warning(
+                '사용 중단 예정인 콜백 경로입니다: /normal/fp/scan_completed. '
+                '/api/fp/scan_completed 경로를 사용하세요.'
+            )
+            if F.SystemModelSetting.get_bool('use_apikey'):
+                apikey = req.form.get('apikey') or req.args.get('apikey')
+                if apikey != F.SystemModelSetting.get('apikey'):
+                    return jsonify({'ret': 'error', 'msg': 'Invalid API key'}), 403
+            return self.process_api(sub, req)
+
     def process_api(self, sub, req):
+        if sub == 'scan_completed':
+            callback_id = req.form['callback_id']
+            db_item = ModelFPItem.get_by_id(callback_id.split('_')[-1])
+            db_item.status = req.form['status']
+            db_item.save()
+            return jsonify({'ret':'success'})
         if sub == 'broadcast':
             return self.do_broadcast(req.args.get('gds_path'), req.args.get('scan_mode', 'ADD'))
     
